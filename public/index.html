@@ -13,8 +13,8 @@
                     .then(data => {
                         document.getElementById('temperature').textContent = `${data.temperature}ºC`;
                         // Convert the timestamp to a Date object
-                        const timestampDate = new Date(data.timestamp._seconds * 1000); // Convert to milliseconds
-                        document.getElementById('timestamp').textContent = `${timestampDate.toLocaleString()}`;
+                        const timestampDate = new Date(data.timestamp);
+                        document.getElementById('timestamp').textContent = timestampDate.toLocaleString();
                     })
                     .catch(error => console.error('Error:', error));
             }

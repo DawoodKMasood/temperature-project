@@ -1,34 +1,35 @@
 const express = require('express');
-const admin = require('firebase-admin');
-var serviceAccount = require("./temperature-project.json");
+const mysql = require('mysql2/promise');
 const app = express();
 const port = 3000;
 
 require('dotenv').config();
 
-// Initialize Firebase
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-});
+// MySQL connection settings
+const dbConfig = {
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    user: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE
+};
 
 app.use(express.static('public'));
 
-const db = admin.firestore();
-
 app.get('/latest', async (req, res) => {
     try {
-        const temperatureRef = db.collection('temperature');
-        const latestSnapshot = await temperatureRef.orderBy('timestamp', 'desc').limit(1).get();
+        const connection = await mysql.createConnection(dbConfig);
+        const [rows] = await connection.execute('SELECT * FROM temperature ORDER BY timestamp DESC LIMIT 1');
 
-        if (latestSnapshot.empty) {
+        if (rows.length === 0) {
             res.status(404).json({ error: 'No temperature data found' });
             return;
         }
 
-        latestSnapshot.forEach(doc => {
-            res.status(200).json(doc.data());
-        });
+        res.status(200).json(rows[0]);
+        await connection.end();
     } catch (error) {
+        console.error('Database error:', error.message);
         res.status(500).json({ error: 'Error fetching temperature data', message: error.message });
     }
 });
